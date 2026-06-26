@@ -2,10 +2,10 @@ import { useState } from "react";
 import "../App.css";
 
 function CreateQuote() {
-  // Pulling the base URL dynamically from your .env file
+  // Pulling the base URL dynamically from your Vite environment variables
   const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-  // Maps user-friendly names to the real IDs Rorisang's database uses
+  // FIX: Converted plain strings to relational objects matching the backend database IDs
   const customers = [
     { id: "CUST-01", name: "John Smith" },
     { id: "CUST-02", name: "Sarah Jones" },
@@ -18,11 +18,12 @@ function CreateQuote() {
     { id: "BENZ003", name: "BMW 320 DEF456" }
   ];
 
+  // State definitions matching Rorisang's structure
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState("");
   const [lineItems, setLineItems] = useState([{ description: "", quantity: 0, unitPrice: 0 }]);
   
-  // UI states for layout tasks
+  // UI and Layout states
   const [expiryDate, setExpiryDate] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
   const [discountType, setDiscountType] = useState("none"); 
@@ -31,12 +32,14 @@ function CreateQuote() {
   const [status, setStatus] = useState("idle"); 
   const [message, setMessage] = useState("");
 
+  // Rorisang's exact change handler function
   const handleChange = (index, field, value) => {
     const updatedItems = [...lineItems];
     updatedItems[index][field] = field === "description" ? value : Number(value);
     setLineItems(updatedItems);
   };
 
+  // Rorisang's exact row inclusion function
   const addLineItem = () => {
     setLineItems([...lineItems, { description: "", quantity: 0, unitPrice: 0 }]);
   };
@@ -46,7 +49,7 @@ function CreateQuote() {
     setLineItems(updatedItems.length ? updatedItems : [{ description: "", quantity: 0, unitPrice: 0 }]);
   };
 
-  // --- CALCULATIONS ---
+  // --- FINANCIAL CALCULATIONS ---
   const subtotal = lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   
   let discountAmount = 0;
@@ -60,6 +63,7 @@ function CreateQuote() {
   const tax = discountedSubtotal * 0.15;
   const grandTotal = discountedSubtotal + tax;
 
+  // --- BACKEND SUBMISSION SYSTEM ---
   const saveQuote = async () => {
     if (!selectedCustomer || !selectedVehicle) {
       setStatus("error");
@@ -75,16 +79,14 @@ function CreateQuote() {
     setStatus("submitting");
     setMessage("");
 
-    // Matches backend expected schema columns
+    // FIX: Only send clean schema keys to prevent backend rejection
     const quotePayload = {
       customer_id: selectedCustomer,
-      vehicle_id: selectedVehicle,
-      description_q: lineItems[0].description, 
-      created_by: "Neil"                       
+      vehicle_id: selectedVehicle
     };
 
     try {
-      // 1. Create Main Quote document using environment variable
+      // 1. POST request to create the base quote document
       const quoteResponse = await fetch(`${API_BASE_URL}/quotes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,7 +99,7 @@ function CreateQuote() {
       const newQuoteId = quoteData.id || quoteData.quote_id; 
       const newQuoteNumber = quoteData.quote_number || newQuoteId;
 
-      // 2. Loop and save each individual line item using environment variable
+      // 2. Loop through and save individual line items sequentially
       for (const item of lineItems) {
         if (!item.description) continue; 
 
@@ -130,6 +132,7 @@ function CreateQuote() {
     <div className="quote-container">
       <h1>Create New Quote</h1>
 
+      {/* Dynamic Colored Alerts */}
       {status === "success" && <div className="alert alert-success">{message}</div>}
       {status === "error" && <div className="alert alert-error">{message}</div>}
 
@@ -263,7 +266,7 @@ function CreateQuote() {
           ></textarea>
         </div>
 
-        <div className="summary-wrapper" style={{ flex: 1, minWidth: "250px", marginTop: 0 }}>
+        <div className="summary-wrapper" style={{ flex: 1, minWidth: "250px" }}>
           <div className="summary-card" style={{ width: "100%" }}>
             <div className="summary-row" style={{ alignItems: "center", marginBottom: "15px" }}>
               <select 
